@@ -11,9 +11,9 @@ class User:
 
     #Higher the value the more similar they ares
     def similarity(self,other):
-        gamma = 2
+        gamma = 3#2
         sigma = 1.5
-        offset = 1
+        offset = 0#1
 
         sim =-1
         if self.age == other.age and self.gender == other.gender:

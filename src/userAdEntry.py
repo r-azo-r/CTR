@@ -20,9 +20,10 @@ class UserAdEntry:
     def scoreMetric1(self):
         alpha =1
         beta = 1
+        s = sum([(x.click/x.impression) * (x.position/x.depth) for x in self.sessionList]) * alpha \
+        + sum([x.impression/(x.impression+len(self.sessionList)) for x in self.sessionList]) * beta
         #sum([alpha*((x.click*x.position)/(x.impression*x.depth))+((x.impression/len(self.sessionList))*beta) for x in self.sessionList])
-        return  sum([(x.click/x.impression) * (x.position/x.depth) for x in self.sessionList]) * alpha \
-            + sum([x.impression for x in self.sessionList])/len(self.sessionList) * beta
+        return s
 
 
     def scoreMetric2(self,userList):

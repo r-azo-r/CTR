@@ -29,8 +29,8 @@ def populateUserAdMatrix(userAdList,userList,line):
     entry = line.split()
 
     #increment query count for the user
-    #if int(entry[-1]) in userList:
-        #userList[int(entry[-1])].queryCount+=1
+    if int(entry[-1]) in userList:
+        userList[int(entry[-1])].queryCount+=1
 
     #Add entry to user-ad matrix
     if (int(entry[-1]), int(entry[3])) in userAdList.keys():
@@ -53,8 +53,8 @@ def readData():
     userList={}
 
     # read from input
-    userAd_file = '../data/track2/train-small.txt'
-    user_file = '../data/track2/userid_profile-small.txt'
+    userAd_file = '../data/track2/msync-training.txt'
+    user_file = '../data/track2/msync-users.txt'
     fh = open(user_file, 'r')
     for line in fh:
         populateUserMatrix(userList, line)
@@ -65,12 +65,11 @@ def readData():
 
     return (userAdList,userList)
 
-
 (userAdList,userList)=readData()
-tempScores = [userAdList[x].score(userAdList[x].scoreMetric2(userList)) for x in userAdList.keys()]
+tempScores = [userAdList[x].score(userAdList[x].scoreMetric1()) for x in userAdList.keys()]
 
 # percentage who never click on an ad
-print sum([1 for x in tempScores if x > 0])/len(tempScores)
+print sum([1 for x in tempScores if x > 0.5])/len(tempScores)
 
 print min(tempScores)
 print max(tempScores)
