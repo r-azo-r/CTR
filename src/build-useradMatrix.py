@@ -3,7 +3,6 @@ import userAdEntry as ua
 import User as u
 import Session
 
-
 def updateUserAdEntry(obj,entry):
     session= Session.Session()
     session.click = int(entry[0])
