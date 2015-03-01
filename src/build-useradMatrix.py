@@ -64,14 +64,37 @@ def readData():
 
     return (userAdList,userList)
 
+def findSimilarUsers(adid):
+    tmpUserList = [userAdList[x].userid for x in userAdList.keys() if x[1]==adid]
+    return tmpUserList
+
+#Logic to identify ads with multiple users
+def getAdsWithMultipleUsers(userAdList):
+    testAd = []
+    dup = []
+    for key in userAdList.keys():
+        if key[1] in testAd:
+            dup.append(key[1])
+        else:
+            testAd.append(key[1])
+    return list(set(dup))
+
 (userAdList,userList)=readData()
-tempScores = [userAdList[x].score(userAdList[x].scoreMetric1()) for x in userAdList.keys()]
+
+print getAdsWithMultipleUsers(userAdList)
+
+adid=21522776
+simUsers=findSimilarUsers(adid)
+print len(simUsers)
+# for user in simUsers:
+#     print [x for x in userAdList.keys() if x==(user,adid)]
+#tempScores = [userAdList[x].score(userAdList[x].scoreMetric1()) for x in userAdList.keys()]
 
 # percentage who never click on an ad
-print sum([1 for x in tempScores if x > 0.5])/len(tempScores)
+#print sum([1 for x in tempScores if x > 0.5])/len(tempScores)
 
-print min(tempScores)
-print max(tempScores)
-print len(userAdList)
-print len(userList)
+#print min(tempScores)
+#print max(tempScores)
+#print len(userAdList)
+#print len(userList)
 
