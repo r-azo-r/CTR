@@ -7,7 +7,7 @@ class User:
     def __init__(self,gender,age):
         self.age=age
         self.gender=gender
-        self.queryCount = -1
+        self.queryCount = 0
 
     #Higher the value the more similar they ares
     def similarity(self,other):
@@ -18,9 +18,11 @@ class User:
         sim =-1
         if self.age == other.age and self.gender == other.gender:
             sim =  sigma
+            sim_normalized=sim/sigma
         else:
             g_self = (self.gender + offset) * gamma;
             g_oth = (other.gender + offset) * gamma;
-            sim = 1/math.sqrt((g_self - g_oth)^2 + (self.age - other.age)^2)
+            sim = 1/math.sqrt(math.pow((g_self - g_oth),2) + math.pow((self.age - other.age),2))
+            sim_normalized = sim/sigma
 
-        return sim
+        return sim_normalized

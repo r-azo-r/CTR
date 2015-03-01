@@ -13,7 +13,7 @@ def updateUserAdEntry(obj,entry):
     obj.sessionList.append(session)
 
 def addNewUserAdEntry(userAdList,entry):
-    userObj = ua.UserAdEntry(entry[-1],entry[3])
+    userObj = ua.UserAdEntry(int(entry[-1]),int(entry[3]))
     session= Session.Session()
     session.click = int(entry[0])
     session.depth = int(entry[5])
@@ -29,7 +29,7 @@ def populateUserAdMatrix(userAdList,userList,line):
 
     #increment query count for the user
     if int(entry[-1]) in userList:
-        userList[int(entry[-1])].queryCount+=1
+        userList[int(entry[-1])].queryCount+=int(entry[1])
 
     #Add entry to user-ad matrix
     if (int(entry[-1]), int(entry[3])) in userAdList.keys():
@@ -45,15 +45,13 @@ def populateUserMatrix(userList,line):
     #     userList[int(entry[0])]= u.User(int(entry[1]),int(entry[2]))
     userList[int(entry[0])]= u.User(int(entry[1]),int(entry[2]))
 
-def readData():
+def readData(userAd_file,user_file):
 
     #storage
     userAdList={}
     userList={}
 
     # read from input
-    userAd_file = '../data/track2/msync-training.txt'
-    user_file = '../data/track2/msync-users.txt'
     fh = open(user_file, 'r')
     for line in fh:
         populateUserMatrix(userList, line)
@@ -64,37 +62,58 @@ def readData():
 
     return (userAdList,userList)
 
-def findSimilarUsers(adid):
-    tmpUserList = [userAdList[x].userid for x in userAdList.keys() if x[1]==adid]
-    return tmpUserList
+def getAudienceForAd(adid):
+    #TODO Add threshold based on user-ad score to limit the number of users
+    tmpUserList = [userAdList[x].userid for x in userAdList.keys() if x[1]==adid ]
+    return list(set(tmpUserList))
 
 #Logic to identify ads with multiple users
 def getAdsWithMultipleUsers(userAdList):
     testAd = []
     dup = []
     for key in userAdList.keys():
-        if key[1] in testAd:
+        if key[1] in testAd: #if adid in testad list
             dup.append(key[1])
         else:
             testAd.append(key[1])
     return list(set(dup))
 
+def computeAggregateSimilarity(test_user,test_adid,userAdList,userList):
+    simUsers=getAudienceForAd(test_adid)
+    scores_userAd=[]
+    user_sim=[]
+    similarityScore=[]
+    for x in simUsers:
+        tempTuple=(x,test_adid)
+        score_userSim=userList[test_user].similarity(userList[x])
+
+        #TODO change this to use a different metric to score user-ad association
+        score_userAd=userAdList[tempTuple].score(userAdList[tempTuple].scoreMetric1_fix(userList))
+
+        user_sim.append(score_userSim)
+        scores_userAd.append(score_userAd)
+        similarityScore.append(score_userSim*score_userAd)
+
+    print scores_userAd
+    print user_sim
+    print similarityScore
+    print len(scores_userAd)
+    print len(user_sim)
+    print len(similarityScore)
+    return sum(similarityScore)/len(similarityScore)
+
+# def computeCTR(test_user,test_adid):
+#     return computeAggregateSimilarity(test_user,test_adid,userAdList,userList)
+
+userAd_file = '../data/track2/msync-training.txt'
+user_file = '../data/track2/msync-users.txt'
 (userAdList,userList)=readData()
 
-print getAdsWithMultipleUsers(userAdList)
+#TODO Testing
+test_adid=20172874 #21522776
+#TODO Just for testing, pass a real user
+test_user=getAudienceForAd(test_adid)[0]
+print computeAggregateSimilarity(test_user,test_adid,userAdList,userList)
 
-adid=21522776
-simUsers=findSimilarUsers(adid)
-print len(simUsers)
-# for user in simUsers:
-#     print [x for x in userAdList.keys() if x==(user,adid)]
-#tempScores = [userAdList[x].score(userAdList[x].scoreMetric1()) for x in userAdList.keys()]
-
-# percentage who never click on an ad
-#print sum([1 for x in tempScores if x > 0.5])/len(tempScores)
-
-#print min(tempScores)
-#print max(tempScores)
-#print len(userAdList)
-#print len(userList)
+#print computeAggregateSimilarity(2510545,test_adid,userAdList,userList)
 

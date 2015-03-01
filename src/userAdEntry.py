@@ -1,4 +1,5 @@
 from __future__ import division
+import math
 
 class UserAdEntry:
     'Common base class for all UserAdEntry'
@@ -12,7 +13,6 @@ class UserAdEntry:
         self.adid = adid
         self.sessionList=list()
 
-    #TODO Need to enhance this function
     def score(self,f=lambda x : 1 if x.click > 0 else 0):
         #return sum(1 for x in self.sessionList if f(x))
         return f
@@ -25,6 +25,22 @@ class UserAdEntry:
         #sum([alpha*((x.click*x.position)/(x.impression*x.depth))+((x.impression/len(self.sessionList))*beta) for x in self.sessionList])
         return s
 
+    def scoreMetric1_norm(self):
+        alpha =1
+        beta = 1
+        s = sum([(x.click/x.impression) * (x.position/x.depth) for x in self.sessionList])/len(self.sessionList) * alpha \
+            + sum([x.impression/(x.impression+len(self.sessionList)) for x in self.sessionList]) * beta
+        #sum([alpha*((x.click*x.position)/(x.impression*x.depth))+((x.impression/len(self.sessionList))*beta) for x in self.sessionList])
+        return s
+
+
+    def scoreMetric1_fix(self,userList):
+        alpha =0.7
+        beta = 0.3
+        s = sum([(x.click/x.impression) * (x.position + math.log(x.depth))/x.depth for x in self.sessionList]) * alpha \
+            + sum([x.impression for x in self.sessionList])/userList[self.userid].queryCount * beta
+        #sum([alpha*((x.click*x.position)/(x.impression*x.depth))+((x.impression/len(self.sessionList))*beta) for x in self.sessionList])
+        return s
 
     def scoreMetric2(self,userList):
         alpha =0.5
