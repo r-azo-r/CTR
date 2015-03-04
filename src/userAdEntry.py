@@ -33,7 +33,6 @@ class UserAdEntry:
         #sum([alpha*((x.click*x.position)/(x.impression*x.depth))+((x.impression/len(self.sessionList))*beta) for x in self.sessionList])
         return s
 
-
     def scoreMetric1_fix(self,userList):
         alpha =0.7
         beta = 0.3

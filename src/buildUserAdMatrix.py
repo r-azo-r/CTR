@@ -3,6 +3,8 @@ import userAdEntry as ua
 import User as u
 import Session
 import math
+import random
+import scoreKDD as sc
 
 def score(clk,imp,p_ctr):
     mse = lambda clicks, impressions, p_ctr: math.pow(clicks/impressions-p_ctr,2.0)
@@ -32,15 +34,17 @@ def addNewUserAdEntry(userAdList,entry):
 def populateUserAdMatrix(userAdList,userList,line):
     entry = line.split()
 
-    #increment query count for the user
-    if int(entry[-1]) in userList:
-        userList[int(entry[-1])].queryCount+=int(entry[1])
+    #Fix to not add user 0
+    if int(entry[-1]) != 0:
+        #increment query count for the user
+        if int(entry[-1]) in userList:
+            userList[int(entry[-1])].queryCount+=int(entry[1])
 
-    #Add entry to user-ad matrix
-    if (int(entry[-1]), int(entry[3])) in userAdList.keys():
-        updateUserAdEntry(userAdList[(int(entry[-1]), int(entry[3]))], entry)
-    else:
-        addNewUserAdEntry(userAdList, entry)
+        #Add entry to user-ad matrix
+        if (int(entry[-1]), int(entry[3])) in userAdList.keys():
+            updateUserAdEntry(userAdList[(int(entry[-1]), int(entry[3]))], entry)
+        else:
+            addNewUserAdEntry(userAdList, entry)
 
 def populateUserMatrix(userList,line):
     entry = line.split()
@@ -67,7 +71,7 @@ def readData(userAd_file,user_file):
 
     return (userAdList,userList)
 
-def getAudienceForAd(adid):
+def getAudienceForAd(adid,userAdList):
     #TODO Add threshold based on user-ad score to limit the number of users
     tmpUserList = [userAdList[x].userid for x in userAdList.keys() if x[1]==adid ]
     return list(set(tmpUserList))
@@ -84,7 +88,11 @@ def getAdsWithMultipleUsers(userAdList):
     return list(set(dup))
 
 def computeAggregateSimilarity(test_user,test_adid,userAdList,userList):
-    simUsers=getAudienceForAd(test_adid)
+    simUsers=getAudienceForAd(test_adid,userAdList)
+
+    #Fix to remove 0 user as it is unknown
+    #simUsers=filter(lambda a: a != 0, simUsers)
+
     scores_userAd=[]
     user_sim=[]
     similarityScore=[]
@@ -105,28 +113,43 @@ def computeAggregateSimilarity(test_user,test_adid,userAdList,userList):
     # print len(scores_userAd)
     # print len(user_sim)
     # print len(similarityScore)
-    return sum(similarityScore)/len(similarityScore)
+    return sum(similarityScore)/len(similarityScore) if len(similarityScore) > 0 else 0
 
-# def computeCTR(test_user,test_adid):
-#     return computeAggregateSimilarity(test_user,test_adid,userAdList,userList)
+def computeCTR(test_user,test_adid,userAdList,userList):
+    #remove a datapoint
+    temp=userAdList.pop((test_user,test_adid))
+    score=computeAggregateSimilarity(test_user,test_adid,userAdList,userList)
+    #put back
+    if temp is not None:
+        userAdList[(test_user,test_adid)]=temp
+    return score
 
-userAd_file = '../data/track2/msync-training.txt'
-user_file = '../data/track2/msync-users.txt'
-(userAdList,userList)=readData(userAd_file,user_file)
+def testCTR(userAdList,userList,n):
+    if n == 0:
+        testSet=[ (5276025, 7409307), (654889, 10396332), (1544886, 20549646), (2853641, 21162426), (58791, 9025386),(1307537, 20183684), (677596, 8676724), (3336229, 4345226), (13903553, 8676728), (2990599, 9584595),(9459266, 6960975)]
+    else:
+        testSet = pickNRandomValues(10,userAdList)
+    #testSet = pickNRandomValues(5,userAdList)
+    #testSet=[(getAudienceForAd(20172874)[0],20172874),(getAudienceForAd(21522776)[0],21522776)]
+    scores=[]
+    #repeat n times
+    for i in range(0,len(testSet)):
+        p_ctr = computeCTR(testSet[i][0],testSet[i][1],userAdList,userList)
+        tuple = (testSet[i][0],testSet[i][1])
+        click_impList = [(x.click,x.impression) for x in userAdList[tuple].sessionList]
+        click_sum=sum([x[0] for x in click_impList])
+        imp_sum = sum([x[1] for x in click_impList])
+        scores.append((click_sum,imp_sum,p_ctr))
+    return scores
 
-#TODO Testing
-test_adid=20172874 #21522776
-#TODO Just for testing, pass a real user
-test_user=getAudienceForAd(test_adid)[0]
-p_ctr =  computeAggregateSimilarity(test_user,test_adid,userAdList,userList)
-print p_ctr
+def pickNRandomValues(n,userAdList):
+    keyList=[]
+    keys=userAdList.keys()
+    for i in range(0,n):
+        r_val = random.randint(0,len(keys))
+        keyList.append(keys[r_val])
+    return keyList
 
-#calculate click impression
-tuple = (test_user,test_adid)
-click_impList = [(x.click,x.impression) for x in userAdList[tuple].sessionList]
-click_sum=sum([x[0] for x in click_impList])
-imp_sum = sum([x[1] for x in click_impList])
-print score(click_sum,imp_sum,p_ctr)
-
-#print computeAggregateSimilarity(2510545,test_adid,userAdList,userList)
-
+# userAd_file = '../data/track2/msync-training.txt'
+# user_file = '../data/track2/msync-users.txt'
+# (userAdList,userList)=readData(userAd_file,user_file)
