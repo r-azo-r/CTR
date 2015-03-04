@@ -2,6 +2,11 @@ from __future__ import division
 import userAdEntry as ua
 import User as u
 import Session
+import math
+
+def score(clk,imp,p_ctr):
+    mse = lambda clicks, impressions, p_ctr: math.pow(clicks/impressions-p_ctr,2.0)
+    return mse(clk,imp,p_ctr)
 
 def updateUserAdEntry(obj,entry):
     session= Session.Session()
@@ -94,12 +99,12 @@ def computeAggregateSimilarity(test_user,test_adid,userAdList,userList):
         scores_userAd.append(score_userAd)
         similarityScore.append(score_userSim*score_userAd)
 
-    print scores_userAd
-    print user_sim
-    print similarityScore
-    print len(scores_userAd)
-    print len(user_sim)
-    print len(similarityScore)
+    # print scores_userAd
+    # print user_sim
+    # print similarityScore
+    # print len(scores_userAd)
+    # print len(user_sim)
+    # print len(similarityScore)
     return sum(similarityScore)/len(similarityScore)
 
 # def computeCTR(test_user,test_adid):
@@ -107,13 +112,21 @@ def computeAggregateSimilarity(test_user,test_adid,userAdList,userList):
 
 userAd_file = '../data/track2/msync-training.txt'
 user_file = '../data/track2/msync-users.txt'
-(userAdList,userList)=readData()
+(userAdList,userList)=readData(userAd_file,user_file)
 
 #TODO Testing
 test_adid=20172874 #21522776
 #TODO Just for testing, pass a real user
 test_user=getAudienceForAd(test_adid)[0]
-print computeAggregateSimilarity(test_user,test_adid,userAdList,userList)
+p_ctr =  computeAggregateSimilarity(test_user,test_adid,userAdList,userList)
+print p_ctr
+
+#calculate click impression
+tuple = (test_user,test_adid)
+click_impList = [(x.click,x.impression) for x in userAdList[tuple].sessionList]
+click_sum=sum([x[0] for x in click_impList])
+imp_sum = sum([x[1] for x in click_impList])
+print score(click_sum,imp_sum,p_ctr)
 
 #print computeAggregateSimilarity(2510545,test_adid,userAdList,userList)
 
