@@ -4,7 +4,6 @@ import User as u
 import Session
 import math
 import random
-import scoreKDD as sc
 
 def score(clk,imp,p_ctr):
     mse = lambda clicks, impressions, p_ctr: math.pow(clicks/impressions-p_ctr,2.0)

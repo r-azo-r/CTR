@@ -19,7 +19,7 @@ user_file = '../data/track2/msync-users.txt'
 
 #TODO Testing
 #test_adid=20172874 #21522776
-#test_user=getAudienceForAd(test_adid)[0]
+#test_user=userAdDf[userAdDf.adId == testad]
 
 result_set = model.testCTR(userAdList,userList,10)
 computeAccuracy(result_set,2)

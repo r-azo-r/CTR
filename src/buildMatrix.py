@@ -12,6 +12,8 @@ def readData(userAd_file,user_file):
     user_col = ['userId','gender','age']
     userAdDf=pd.read_csv(userAd_file,sep='\t',engine='c')
     userAdDf.columns = userAd_col
+    userAdDf = userAdDf[userAdDf.userId != 0]
+
     userDf=pd.read_csv(user_file,sep='\t',engine='c')
     userDf.columns = user_col
     return (userAdDf,userDf)
@@ -84,10 +86,88 @@ def plotUserAd(df):
     # # plt.title('2 most popular hashtags')
     plt.show()
 
-userAd_file = '../data/track2/msync-training.txt'
-user_file = '../data/track2/msync-users.txt'
+def getAudienceForAd(adid,userAdList):
+    #TODO Add threshold based on user-ad score to limit the number of users
+    tmpUserList = [userAdList[x].userid for x in userAdList.keys() if x[1]==adid ]
+    return list(set(tmpUserList))
+
+def buildUserAdObj(user,ad,userAdDf):
+    #get userAdFrame
+    userAdFrame = userAdDf[(userAdDf.userId == user) & (userAdDf.adId == ad)]
+    userObj = ua.UserAdEntry(user,ad)
+    imps = 0
+    for row in userAdFrame.values:
+        session= Session.Session()
+        session.click = int(row[0])
+        session.depth = int(row[5])
+        session.impression = int(row[1])
+        imps += session.impression
+        session.position = int(row[6])
+        session.queryId = int(row[7])
+        userObj.sessionList.append(session)
+    return (userObj,imps)
+
+def computeAggregateSimilarity(test_user,test_adid,userAdDf,userDf):
+    simUsers=userAdDf[userAdDf.adId == testad]['userId']
+    simUsers = simUsers.where(simUsers != test_user).dropna().unique()
+
+    scores_userAd=[]
+    user_sim=[]
+    similarityScore=[]
+    testU=userDf[userDf.userId == test_user]
+    testUserObj = u.User(testU.gender.values[0],testU.age.values[0])
+    for x in simUsers:
+        #Perform user similarity
+        xU=userDf[userDf.userId == x]
+        #TODO Fix for users not in userDF , not sure why this is happening
+        if not xU.empty:
+            xUserObj = u.User(xU.gender.values[0],xU.age.values[0])
+            score_userSim=testUserObj.similarity(xUserObj)
+            user_sim.append(score_userSim)
+            # #TODO change this to use a different metric to score user-ad association
+            #Build UserAd object from data frame
+            (testUserAdObj,qc) = buildUserAdObj(x,test_adid,userAdDf)
+            score_userAd=testUserAdObj.score(testUserAdObj.scoreMetric1_fix2(qc))
+
+            user_sim.append(score_userSim)
+            scores_userAd.append(score_userAd)
+            similarityScore.append(score_userSim*score_userAd)
+    print user_sim
+    print scores_userAd
+    print similarityScore
+
+def computeCTR(test_user,test_adid,userAdDf,userDf):
+    #remove a datapoint
+    temp=userAdDf[(UserAdDf.userId != test_user) & (userAdDf.adId != test_adid)]
+    score=computeAggregateSimilarity(test_user,test_adid,temp,userDf)
+    return score
+
+#TODO need to complete this
+def testCTR(userAdList,userList,n):
+    if n == 0:
+        testSet=[ (5276025, 7409307), (654889, 10396332), (1544886, 20549646), (2853641, 21162426), (58791, 9025386),(1307537, 20183684), (677596, 8676724), (3336229, 4345226), (13903553, 8676728), (2990599, 9584595),(9459266, 6960975)]
+    else:
+        testSet = pickNRandomValues(10,userAdList)
+    #testSet = pickNRandomValues(5,userAdList)
+    #testSet=[(getAudienceForAd(20172874)[0],20172874),(getAudienceForAd(21522776)[0],21522776)]
+    scores=[]
+    #repeat n times
+    for i in range(0,len(testSet)):
+        p_ctr = computeCTR(testSet[i][0],testSet[i][1],userAdList,userList)
+        tuple = (testSet[i][0],testSet[i][1])
+        click_impList = [(x.click,x.impression) for x in userAdList[tuple].sessionList]
+        click_sum=sum([x[0] for x in click_impList])
+        imp_sum = sum([x[1] for x in click_impList])
+        scores.append((click_sum,imp_sum,p_ctr))
+    return scores
+
+userAd_file = '../data/track2/ksync-training.txt'
+user_file = '../data/track2/ksync-users.txt'
 (userAdDf,userDf)=readData(userAd_file,user_file)
+testad=20172874
+testuser=userAdDf[userAdDf.adId == testad]['userId'].values[0]
 
-#(userAdList,userList)=build(userAdDf,userDf)
+print computeAggregateSimilarity(testuser,testad,userAdDf,userDf)
+#result_set = testCTR(userAdList,userList,10)
+#computeAccuracy(result_set,2)
 
-plotUserAd(userAdDf.iloc[:,[-1,3]])
