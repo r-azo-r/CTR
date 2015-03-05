@@ -16,8 +16,8 @@ import User
 #
 # pickle.dump(userList,open("userProf.p","wb"))
 fh_user=open('../data/track2/userid_profile.txt','r')
-fh_uid=open('../data/track2/k2uids.txt','r')
-user_sync=open('../data/track2/k2sync-users.txt','wa')
+fh_uid=open('../data/track2/k4uids.txt','r')
+user_sync=open('../data/track2/k4sync-users.txt','wa')
 
 uids = fh_uid.read().splitlines()
 uids=set(uids)
