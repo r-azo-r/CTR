@@ -7,8 +7,8 @@ import Session
 def readData():
 
     # read from input
-    userAd_file = '../data/track2/msync-training.txt'
-    user_file = '../data/track2/msync-users.txt'
+    userAd_file = '../data/track2/ksync-training.txt'
+    user_file = '../data/track2/ksync-users.txt'
     userAd_col = ['click','imps','dUrl','adId','advId','depth','pos','qId','keyId','titleId','descId','userId']
     user_col = ['userId','gender','age']
     userAdDf=pd.read_csv(userAd_file,sep='\t',engine='c')
@@ -18,17 +18,18 @@ def readData():
     return (userAdDf,userDf)
 
 (userAdDf,userDf)=readData()
-flatDf=pd.merge(userAdDf, userDf, left_on='userId', right_on='userId', how='inner')
-print flatDf
+#flatDf=pd.merge(userAdDf, userDf, left_on='userId', right_on='userId', how='inner')
+#print flatDf
 #got each record grouped by user,adId
-flatDFGrouped=flatDf.groupby(['userId','adId'])
-
+#flatDFGrouped=flatDf.groupby(['userId','adId'])
+print len(userAdDf)
+print len(userDf)
 # for name,group in flatDFGrouped:
-#     print name
+#      print name
 
 #selecting based on certain criterion
 
-criterion = flatDf[['userId','adId']]
+#criterion = flatDf[['userId','adId']]
 #print flatDf[['userId','adId']]
 
 
