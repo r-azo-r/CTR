@@ -5,7 +5,22 @@ import User as u
 import Session
 import matplotlib.pyplot as plt
 import random
+import operator
+import itertools
+import os
 
+def getTopNAdsForUser(test_user,test_adid,userAdDf,userDf,n = 3):
+    userAdPairs = userAdDf[(userAdDf.userId == test_user) & (userAdDf.adId != test_adid)]['adId']
+    scores={}
+    #compute scores
+    for x in userAdPairs:
+        scores[x] = computeAggregateSimilarity(test_user,x,userAdDf,userDf)
+
+    #sorted dictionary
+    sorted_x = sorted(scores.items(), key=operator.itemgetter(1),reverse=True)
+
+    #pick n ads
+    print list(itertools.islice(sorted_x,n))
 
 def readData(userAd_file,user_file):
     # read from input
@@ -109,16 +124,19 @@ def buildUserAdObj(user,ad,userAdDf):
         userObj.sessionList.append(session)
     return (userObj,imps)
 
-def computeAggregateSimilarity(test_user,test_adid,userAdDf,userDf,SimUserthreshold):# = 40
-    simUsers=userAdDf[userAdDf.adId == test_adid]['userId']
-    simUsers = simUsers.where(simUsers != test_user).dropna().unique()
-    if len(simUsers) > SimUserthreshold:
-        simUsers=random.sample(simUsers,SimUserthreshold)
+def computeAggregateSimilarity(test_user,test_adid,userAdDf,userDf,SimUserthreshold=10):# = 40
     scores_userAd=[]
     user_sim=[]
     similarityScore=[]
     testU=userDf[userDf.userId == test_user]
     testUserObj = u.User(testU.iloc[0,-2],testU.iloc[0,-1])#.gender.values[0],testU.age.values[0])
+
+
+    simUsers=userAdDf[userAdDf.adId == test_adid]['userId']
+    simUsers = simUsers.where(simUsers != test_user).dropna().unique()
+
+    if len(simUsers) > SimUserthreshold:
+        simUsers=random.sample(simUsers,SimUserthreshold)
     for x in simUsers:
         #Perform user similarity
         xU=userDf[userDf.userId == x]
@@ -215,8 +233,12 @@ user_file = '../data/track2/k4sync-users.txt'
 (userAdDf,userDf)=readData(userAd_file,user_file)
 print 'Data set read'
 
-#testad=20172874
-#testuser=userAdDf[userAdDf.adId == testad]['userId'].values[0]
+# test_ad= 20172874
+# test_user = userAdDf[userAdDf.adId == test_ad]['userId'].values[0]
+# getTopNAdsForUser(test_user,test_ad,userAdDf,userDf)
+
+testad=20172874
+testuser=userAdDf[userAdDf.adId == testad]['userId'].values[0]
 #tmp = buildUserAdObj(23459935,20083853,userAdDf)
 #print computeAggregateSimilarity(testuser,testad,userAdDf,userDf)
 #pickNRandomValues(10,userAdDf)
@@ -228,7 +250,8 @@ print 'Data set read'
 #print result_set
 #computeAccuracy(result_set,2)
 
-#computeAccuracy(repeatNtimes(userAdDf,userDf,100,80),7)
+resNum=101
+computeAccuracy(repeatNtimes(userAdDf,userDf,100,10),resNum)
 # computeAccuracy(repeatNtimes(userAdDf,userDf,100,10),11)
 # computeAccuracy(repeatNtimes(userAdDf,userDf,100,20),12)
 # computeAccuracy(repeatNtimes(userAdDf,userDf,100,40),13)
@@ -239,6 +262,6 @@ print 'Data set read'
 # computeAccuracy(repeatNtimes(userAdDf,userDf,400,40),23)
 # computeAccuracy(repeatNtimes(userAdDf,userDf,400,80),24)
 # computeAccuracy(repeatNtimes(userAdDf,userDf,400,100),25)
-
+os.system("python scoreKDD.py solution"+ `resNum` +".csv submission"+ `resNum` +".csv")
 #plotUserAd(userAdDf)
 #plotUserAd(userAdDf[userAdDf.click > 0])
